@@ -82,6 +82,9 @@ namespace Tests
            Assert.AreEqual(5, n.GetNeighbours(0, 2).Length);
            Assert.AreEqual(3, n.GetNeighbours(0, 0).Length);
            Assert.AreEqual(3, n.GetNeighbours(4, 4).Length);
+           Assert.AreEqual(2, n.GetNeighbours(0, 0,false).Length);
+
+            Assert.AreEqual(4, n.GetNeighbours(2, 2, false).Length);
         }
 
         [TestMethod()]

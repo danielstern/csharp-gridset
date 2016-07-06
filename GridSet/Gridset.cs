@@ -27,6 +27,8 @@ namespace GridSet
             return "Grid ["+width+"x"+height+"]";
         }
 
+        //public static void Tilehop
+
         public GridSet(int x, int y) : this(x,y,default(T))  { }
         public GridSet(int x, int y, T def)
         {
@@ -36,7 +38,7 @@ namespace GridSet
             this.Fill(def);
         }
 
-        public GridElementRelationship[] GetNeighbours(int x, int y)
+        public GridElementRelationship[] GetNeighbours(int x, int y, bool diagonals = true)
         {
             var rels = new System.Collections.Generic.List<GridElementRelationship>();
             for (var i = -1; i <= 1; i++)
@@ -47,13 +49,18 @@ namespace GridSet
                     {
                         if (!(j == 0 && i == 0))
                         {
-                            GridElementRelationship g = new GridElementRelationship();
-                            g.original = grid[x, y];
-                            g.element = grid[x + i, y + j];
-                            g.offsetX = i;
-                            g.offsetY = j;
+                            Console.Write(diagonals);
+                            if (diagonals || (i == 0 || j == 0))
+                            {
+                                GridElementRelationship g = new GridElementRelationship();
+                                g.original = grid[x, y];
+                                g.element = grid[x + i, y + j];
+                                g.offsetX = i;
+                                g.offsetY = j;
 
-                            rels.Add(g);
+                                rels.Add(g);
+                            }
+                            
                         }                        
                     }
                 }
@@ -98,7 +105,6 @@ namespace GridSet
             {
                 gridSection[x, y] = grid[x + startX, y + startY];
             });
-            //Console.
 
             return gridSection;
         }
@@ -114,13 +120,6 @@ namespace GridSet
                 }
             }
         }
-
-        /*
-        public Reference GetReference(int x, int y)
-        {
-            return new Reference(grid[x, y], x, y, this);
-        }
-        */
 
         public T this[int x, int y]
         {
