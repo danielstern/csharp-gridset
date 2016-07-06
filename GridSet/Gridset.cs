@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 namespace GridSet
 {
     public class GridSet<T>
@@ -7,89 +8,71 @@ namespace GridSet
         public int width;
         public int height;
         public delegate void GridDelegateFn(T element, int x, int y);
-        // public delegate void GridDelegateRefFn(Reference reference);
-        public GridSet(int x, int y)
+        public delegate T TAccessorFunction(int x, int y);
+
+        public class GridElementRelationship
+        {
+            public T element;
+            public T original;
+            public int offsetX;
+            public int offsetY;
+        }
+
+        public GridSet(int x, int y, TAccessorFunction a) : this(x, y, default(T)) {
+            Fill(a);
+        }
+
+        public override string ToString()
+        {
+            return "Grid ["+width+"x"+height+"]";
+        }
+
+        public GridSet(int x, int y) : this(x,y,default(T))  { }
+        public GridSet(int x, int y, T def)
         {
             this.width = x;
             this.height = y;
             grid = new T[x, y];
+            this.Fill(def);
         }
 
-        /*
-        public class Reference
+        public GridElementRelationship[] GetNeighbours(int x, int y)
         {
-            public int x;
-            public int y;
-            public T _value;
-            public T value
+            var rels = new System.Collections.Generic.List<GridElementRelationship>();
+            for (var i = -1; i <= 1; i++)
             {
-                get { return _value; }
-                set { this.parent[x, y] = value; this._value = value; }
-            }
-            public GridSet<T> parent;
-
-            public Reference(T value, int x, int y, GridSet<T> parent)
-            {
-                this.x = x;
-                this.y = y;
-                this.parent = parent;
-                this.value = value;
-            }
-
-
-
-            public Reference Copy(Reference neighbour)
-            {
-                neighbour.value = this.value;
-                return neighbour;
-            }
-
-            public void LoopNeighbours(GridDelegateFn g)
-            {
-                for (var i = -1; i <= 1; i++)
+                for (var j = -1; j <= 1; j++)
                 {
-                    for (var j = -1; j <= 1; j++)
+                    if (WithinBounds(x + i, y + j))
                     {
-                        if (i != j)
+                        if (!(j == 0 && i == 0))
                         {
-                            Reference neighbour = Neighbour(x + i, y + j);
-                            if (neighbour)
-                            {
-                                g(neighbour.value, i, j);
-                            }
-                        }
+                            GridElementRelationship g = new GridElementRelationship();
+                            g.original = grid[x, y];
+                            g.element = grid[x + i, y + j];
+                            g.offsetX = i;
+                            g.offsetY = j;
+
+                            rels.Add(g);
+                        }                        
                     }
                 }
             }
-
-            public Reference Neighbour(int offsetX, int offsetY = 0)
-            {
-                if (parent.WithinBounds(x + offsetX, y + offsetY))
-                {
-                    return parent.GetReference(x + offsetX, y + offsetY);
-                }
-                else
-                {
-                    return null;
-                }
-
-            }
-
-            public static implicit operator bool (Reference instance)
-            {
-                if (instance == null)
-                {
-                    return false;
-                }
-                return true;
-            }
+            return rels.ToArray();
         }
-        */
 
         public bool WithinBounds(int x, int y)
         {
             return (x >= 0 && x < this.width &&
                 y >= 0 && y < height);
+        }
+
+        public void Fill(TAccessorFunction accessor)
+        {
+            Loop((T t, int x, int y) =>
+            {
+                grid[x, y] = accessor(x,y);
+            });
         }
 
         public void Fill(T defaultValue)
@@ -102,17 +85,22 @@ namespace GridSet
 
         public GridSet<T> GetSection(int startX, int startY, int width, int height)
         {
-            int newx = Math.Min(width + startX, this.width - width);
-            int newy = Math.Max(height + startY, this.height - height);
-            var ret = new GridSet<T>(newx, newy);
-
-            ret.Loop((T value, int x, int y) =>
+            int maxX = startX + width;
+            int maxY = startY + height;
+            if (maxX > this.width || maxY > this.height)
             {
-                ret[x, y] = grid[x + startX, y + startY]; ;
+                throw new Exception("Invalid section size");
+            }
+
+            var gridSection = new GridSet<T>(width, height);
+
+            gridSection.Loop((T value, int x, int y) =>
+            {
+                gridSection[x, y] = grid[x + startX, y + startY];
             });
             //Console.
 
-            return ret;
+            return gridSection;
         }
 
         public void Loop(GridDelegateFn fn)
