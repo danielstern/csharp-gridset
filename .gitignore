@@ -1,1 +1,8 @@
 *.meta
+TestResults
+.vs
+bin
+obj
+Properties
+*.sln
+*.csproj
