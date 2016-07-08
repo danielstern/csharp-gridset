@@ -5,7 +5,6 @@ using System.Linq;
 
 namespace Tests
 {
-    /*
     [TestClass()]
     public class GridSetTests
     {
@@ -25,7 +24,6 @@ namespace Tests
                 t.secret = x + ":" + y;
                 return t;
             });
-            //            test = new GridSet<X>
         }
 
         [TestMethod()]
@@ -47,6 +45,38 @@ namespace Tests
             Assert.AreEqual(z[0, 0].secret, "0:0");
             Assert.AreEqual(z[0, 4].secret, "0:4");
             Assert.AreEqual(z[1, 2].secret, "1:2");
+        }
+
+        [TestMethod()]
+        public void FalseRecurseReturnsNoElements()
+        {
+            GridCoordRef[] refs = n.NeighbourRecurse(new GridCoordRef(2,2),false,(GridCoordRef r)=> {
+                return false;
+            });
+            //Assert.AreEqual(refs.Length, 4);
+            Assert.AreEqual(refs.Length, 0);
+            //Assert.Fail();
+        }
+
+        [TestMethod()]
+        public void CoordRefEqualityTest()
+        {
+            var ref1 = new GridCoordRef(2, 2);
+            var ref2 = new GridCoordRef(2, 2);
+            var ref3 = new GridCoordRef(2, 1);
+            Assert.IsTrue(ref1 == ref2);
+            Assert.IsFalse(ref2 == ref3);
+        }
+
+        [TestMethod()]
+        public void InfiniteRecurseAlwaysReturnsWholeGrid()
+        {
+            GridCoordRef[] refs = n.NeighbourRecurse(new GridCoordRef(2, 2), false, (GridCoordRef r) => {
+                return true;
+            });
+            Trace.WriteLine(refs.Length);
+            Assert.AreEqual(refs.Length, n.length);
+            Assert.Fail();
         }
 
         [TestMethod()]
@@ -149,7 +179,5 @@ namespace Tests
            //     Assert.Fail();
             }
         }
-        
     }
-    */
 }
