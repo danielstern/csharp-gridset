@@ -14,6 +14,13 @@ namespace GridSet
         public int length { get { return width * height; } }
         public delegate void GridDelegateFn(T element, int x, int y);
 
+        //public static bool Tru = new RecursionValidityDelegate(_Tru);
+
+        public static bool _Tru(int x, int y)
+        {
+            return true;
+        }
+
         public class GridElementRelationship
         {
             public T element;
@@ -111,28 +118,24 @@ namespace GridSet
             return rels.ToArray();
         }
 
-        public GridCoordRef[] NeighbourRecurse(GridCoordRef startCoord, bool useDiagonals, RecursionValidityDelegate ShouldRecurse)
+        public IEnumerable<GridCoordRef[]> NeighbourRecurse(GridCoordRef startCoord, bool useDiagonals, RecursionValidityDelegate ShouldRecurse, int maxSteps = 1000)
         {
-            int max = 50;
             int count = 0;
             bool allHaveBeenFilled = false;
             HashSet<GridCoordRef> recursedTiles = new HashSet<GridCoordRef>() { startCoord };
-            Stack<GridCoordRef> stack = new Stack<GridCoordRef>();
-            stack.Push(startCoord);
+            LinkedList<GridCoordRef> stack = new LinkedList<GridCoordRef>();
+            stack.AddFirst(startCoord);
             while (stack.Count > 0 && !allHaveBeenFilled)
             {
-                if (count++ == max)
+                if (count++ == maxSteps)
                 {
                     Console.WriteLine("Warning: Exceeded max recurse steps");
+                    Console.WriteLine(count + "," + maxSteps);
                     break;
                 }
 
-                GridCoordRef current = stack.Pop();
-             //   if (ShouldRecurse(current))
-             //   {
-             //       recursedTiles.Add(current);
-             //       stack.Push(current);
-            //    }
+                GridCoordRef current = stack.First();
+                stack.RemoveFirst();
 
                 GridCoordRef[] newRels = GetNeighboursCoord(current, useDiagonals)
                     .Where((GridCoordRef g) => { return ShouldRecurse(g); })
@@ -140,8 +143,11 @@ namespace GridSet
 
                 foreach (GridCoordRef rel in newRels)
                 {
-                    stack.Push(rel);
-                    recursedTiles.Add(rel);
+                    bool newReference = recursedTiles.Add(rel);
+                    if (newReference)
+                    {
+                        stack.AddLast(rel);
+                    }
                 }
 
                 if (recursedTiles.Count == length)
@@ -156,7 +162,8 @@ namespace GridSet
 
                // TileCoordRef[] neighbours = GetNeighbours(startCoord.x, startCoord.y, useDiagonals);
             }
-            return recursedTiles.ToArray();
+            //return recursedTiles.ToArray();
+            yield return recursedTiles.ToArray();
         }
 
         public bool WithinBounds(int x, int y)
@@ -179,6 +186,11 @@ namespace GridSet
             {
                 grid[x, y] = defaultValue;
             });
+        }
+
+        public GridSet<T> GetSection(int bottom, int top)
+        {
+            return GetSection(0, bottom, width, top - bottom);
         }
 
         public GridSet<T> GetSection(int startX, int startY, int width, int height)
@@ -212,10 +224,21 @@ namespace GridSet
             }
         }
 
+        public T this[GridCoordRef r]
+        {
+            get { return grid[r.x, r.y]; }
+            set { grid[r.x, r.y] = value; }
+        }
+
         public T this[int x, int y]
         {
             get { return grid[x, y]; }
             set { grid[x, y] = value; }
+        }
+
+        public static bool operator !(GridSet<T> a)
+        {
+            return a == null;
         }
     }
 

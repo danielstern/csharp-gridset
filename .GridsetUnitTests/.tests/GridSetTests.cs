@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using GridSet;
 using System.Linq;
+using System;
+using System.Collections.Generic;
 
 namespace Tests
 {
@@ -50,13 +52,19 @@ namespace Tests
         [TestMethod()]
         public void FalseRecurseReturnsSelf()
         {
-            GridCoordRef[] refs = n.NeighbourRecurse(new GridCoordRef(2,2),false,(GridCoordRef r)=> {
+            IEnumerable<GridCoordRef[]> enumerator = n.NeighbourRecurse(new GridCoordRef(2,2),false,(GridCoordRef r)=> {
                 return false;
             });
-            //Assert.AreEqual(refs.Length, 4);
-            Assert.AreEqual(refs.Length, 1);
+
+            List<GridCoordRef> refs = new List<GridCoordRef>();
+
+            foreach (GridCoordRef[] e in enumerator)
+            {
+                GridCoordRef[] returned = e;
+                refs.AddRange(e);
+            }
+            
             Assert.AreEqual(refs[0], new GridCoordRef(2, 2));
-            //Assert.Fail();
         }
 
         [TestMethod()]
@@ -72,12 +80,51 @@ namespace Tests
         [TestMethod()]
         public void InfiniteRecurseAlwaysReturnsWholeGrid()
         {
-            GridCoordRef[] refs = n.NeighbourRecurse(new GridCoordRef(2, 2), false, (GridCoordRef r) => {
+            IEnumerable<GridCoordRef[]> enumerator = n.NeighbourRecurse(new GridCoordRef(2, 2), false, (GridCoordRef r) => {
                 return true;
             });
-            Trace.WriteLine(refs.Length);
-            Assert.AreEqual(n.length, refs.Length);
-            Assert.Fail();
+
+            HashSet<GridCoordRef> refs = new HashSet<GridCoordRef>();
+
+            foreach (GridCoordRef[] e in enumerator)
+            {
+                GridCoordRef[] returned = e;
+                foreach (var j in e)
+                {
+                    Trace.WriteLine(j);
+                    refs.Add(j);
+                }
+                //refs.Add(e);
+            }
+
+            Assert.AreEqual(n.length, refs.Count);
+        }
+
+        [TestMethod()]
+        public void TrueRecurseWithNoDiagonalsAndFixedCountShouldReturnFirstNeighbours()
+        {
+            IEnumerable<GridCoordRef[]> enumerator = n.NeighbourRecurse(new GridCoordRef(2, 2), false, (GridCoordRef r) => {
+                return true;
+            }, 1);
+
+            HashSet<GridCoordRef> refs = new HashSet<GridCoordRef>();
+
+            foreach (GridCoordRef[] e in enumerator)
+            {
+                GridCoordRef[] returned = e;
+                foreach (var j in e)
+                {
+                    Trace.WriteLine(j);
+                    refs.Add(j);
+                }
+                //refs.Add(e);
+            }
+
+            Assert.AreEqual(5, refs.Count);
+            Assert.IsTrue(refs.Any(r => r.x == 2 && r.y == 1));
+            Assert.IsTrue(refs.Any(r => r.x == 2 && r.y == 3));
+            Assert.IsTrue(refs.Any(r => r.x == 1 && r.y == 2));
+            Assert.IsTrue(refs.Any(r => r.x == 3 && r.y == 2));
         }
 
         [TestMethod()]

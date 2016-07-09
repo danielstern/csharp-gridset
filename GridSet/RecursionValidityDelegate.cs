@@ -7,4 +7,5 @@ namespace GridSet
     public delegate bool SimpleRecursionValidityDelegate();
     public delegate bool RecursionValidityDelegate(GridCoordRef r);
 
+
 }

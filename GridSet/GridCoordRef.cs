@@ -51,6 +51,10 @@ namespace GridSet
         {
             return !(a == b);
         }
+        public override string ToString()
+        {
+            return "Grid Coordinate - [x:" + x + ", y:" + y + "]";
+        }
 
     }
 
