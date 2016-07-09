@@ -61,7 +61,7 @@ namespace GridSet
                     {
                         if (!(j == 0 && i == 0))
                         {
-                            Console.Write(diagonals);
+                            //Console.Write(diagonals);
                             if (diagonals || (i == 0 || j == 0))
                             {
                                 coords.Add(new GridCoordRef(coord.x + i, coord.y + j));
@@ -90,7 +90,7 @@ namespace GridSet
                     {
                         if (!(j == 0 && i == 0))
                         {
-                            Console.Write(diagonals);
+                            //Console.Write(diagonals);
                             if (diagonals || (i == 0 || j == 0))
                             {
                                 GridElementRelationship g = new GridElementRelationship();
@@ -113,7 +113,7 @@ namespace GridSet
 
         public GridCoordRef[] NeighbourRecurse(GridCoordRef startCoord, bool useDiagonals, RecursionValidityDelegate ShouldRecurse)
         {
-            int max = 100;
+            int max = 50;
             int count = 0;
             bool allHaveBeenFilled = false;
             HashSet<GridCoordRef> recursedTiles = new HashSet<GridCoordRef>() { startCoord };
@@ -123,29 +123,31 @@ namespace GridSet
             {
                 if (count++ == max)
                 {
-                    Console.Write("Warning: Exceeded max recurse steps");
+                    Console.WriteLine("Warning: Exceeded max recurse steps");
                     break;
                 }
 
                 GridCoordRef current = stack.Pop();
-                if (ShouldRecurse(current))
-                {
-                    recursedTiles.Add(current);
-                    stack.Push(current);
-                }
+             //   if (ShouldRecurse(current))
+             //   {
+             //       recursedTiles.Add(current);
+             //       stack.Push(current);
+            //    }
 
-                GridCoordRef[] newRels = GetNeighboursCoord(startCoord, useDiagonals)
+                GridCoordRef[] newRels = GetNeighboursCoord(current, useDiagonals)
                     .Where((GridCoordRef g) => { return ShouldRecurse(g); })
                     .ToArray();
 
                 foreach (GridCoordRef rel in newRels)
                 {
                     stack.Push(rel);
+                    recursedTiles.Add(rel);
                 }
 
                 if (recursedTiles.Count == length)
                 {
                     allHaveBeenFilled = true;
+                    Console.Write("All are filled");
                     
                 }
                 //throw new NotImplementedException();
