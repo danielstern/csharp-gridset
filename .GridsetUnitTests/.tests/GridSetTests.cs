@@ -7,6 +7,7 @@ using System.Collections.Generic;
 
 namespace Tests
 {
+
     [TestClass()]
     public class GridSetTests
     {
@@ -15,13 +16,13 @@ namespace Tests
             public string secret;
         }
 
-        GridSet<X> n = new GridSet<X>(0,0);
+        GridSet<X> gridN = new GridSet<X>(0,0);
 
         
         [TestInitialize()]
         public void Startup()
         {
-            n = new GridSet<X>(5, 5, (int x, int y) => {
+            gridN = new GridSet<X>(5, 5, (int x, int y) => {
                 var t = new X();
                 t.secret = x + ":" + y;
                 return t;
@@ -33,7 +34,7 @@ namespace Tests
         {
             Trace.WriteLine("this is going to work for sure");
             Assert.IsTrue(true);
-            Trace.WriteLine(n);
+            Trace.WriteLine(gridN);
         }
 
         [TestMethod()]
@@ -52,7 +53,7 @@ namespace Tests
         [TestMethod()]
         public void FalseRecurseReturnsSelf()
         {
-            IEnumerable<GridCoordRef[]> enumerator = n.NeighbourRecurse(new GridCoordRef(2,2),false,(GridCoordRef r)=> {
+            IEnumerable<GridCoordRef[]> enumerator = gridN.NeighbourRecurse(new GridCoordRef(2,2),Neighbours.CROSS,(GridCoordRef r)=> {
                 return false;
             });
 
@@ -80,7 +81,7 @@ namespace Tests
         [TestMethod()]
         public void InfiniteRecurseAlwaysReturnsWholeGrid()
         {
-            IEnumerable<GridCoordRef[]> enumerator = n.NeighbourRecurse(new GridCoordRef(2, 2), false, (GridCoordRef r) => {
+            IEnumerable<GridCoordRef[]> enumerator = gridN.NeighbourRecurse(new GridCoordRef(2, 2), Neighbours.ALL, (GridCoordRef r) => {
                 return true;
             });
 
@@ -97,13 +98,13 @@ namespace Tests
                 //refs.Add(e);
             }
 
-            Assert.AreEqual(n.length, refs.Count);
+            Assert.AreEqual(gridN.length, refs.Count);
         }
 
         [TestMethod()]
         public void TrueRecurseWithNoDiagonalsAndFixedCountShouldReturnFirstNeighbours()
         {
-            IEnumerable<GridCoordRef[]> enumerator = n.NeighbourRecurse(new GridCoordRef(2, 2), false, (GridCoordRef r) => {
+            IEnumerable<GridCoordRef[]> enumerator = gridN.NeighbourRecurse(new GridCoordRef(2, 2), Neighbours.CROSS, (GridCoordRef r) => {
                 return true;
             }, 1);
 
@@ -146,41 +147,46 @@ namespace Tests
         public void FillTest()
         {
             var g = new GridSet<X>(5, 5);
-            var x = new X();
-            g.Fill(x);
-            Assert.IsTrue(g[0, 0] == x);
-            Assert.IsTrue(g[4, 4] == x);
-            Assert.IsTrue(g[2, 1] == x);
+            var q = new X();
+            g.Fill((int x, int y)=>q);
+            Assert.IsTrue(g[0, 0] == q);
+            Assert.IsTrue(g[4, 4] == q);
+            Assert.IsTrue(g[2, 1] == q);
             //Assert.Fail();
         }
 
+        
         [TestMethod()]
         public void NeighoursCountTest()
         {
-           Assert.AreEqual(8, n.GetNeighbours(2, 2).Length);
-           Assert.AreEqual(5, n.GetNeighbours(0, 2).Length);
-           Assert.AreEqual(3, n.GetNeighbours(0, 0).Length);
-           Assert.AreEqual(3, n.GetNeighbours(4, 4).Length);
-           Assert.AreEqual(2, n.GetNeighbours(0, 0,false).Length);
-
-            Assert.AreEqual(4, n.GetNeighbours(2, 2, false).Length);
+            Assert.AreEqual(4, gridN.GetNeighbours(2, 2).Length);
+            Assert.AreEqual(4, gridN.GetNeighbours(2, 2, Neighbours.DIAGONALS).Length);
+            Assert.AreEqual(5, gridN.GetNeighbours(0, 2, Neighbours.ALL).Length);
+            Assert.AreEqual(4, gridN.GetNeighbours(2, 2, Neighbours.CROSS).Length);
+            Assert.AreEqual(2, gridN.GetNeighbours(0, 0).Length);
+            Assert.AreEqual(3, gridN.GetNeighbours(0, 0, Neighbours.ALL).Length);
+            Assert.AreEqual(1, gridN.GetNeighbours(0, 0, Neighbours.DIAGONALS).Length);
+            Assert.AreEqual(2, gridN.GetNeighbours(4, 4).Length);
+            Assert.AreEqual(3, gridN.GetNeighbours(4, 4, Neighbours.ALL).Length);
+            Assert.AreEqual(1, gridN.GetNeighbours(0, 0,Neighbours.HORIZONTAL).Length);
+            Assert.AreEqual(2, gridN.GetNeighbours(1, 0, Neighbours.HORIZONTAL).Length);
+            Assert.AreEqual(2, gridN.GetNeighbours(0, 1, Neighbours.VERTICAL).Length);
+           
         }
+        
 
         [TestMethod()]
         public void NeighoursValuesTest()
         {
-            var c = n.GetNeighbours(2,2);
-            Assert.IsTrue(c.Any(n => n.element.secret == "1:1"));
-            Assert.IsTrue(c.Any(n => n.element.secret == "3:3"));
-            Assert.IsFalse(c.Any(n => n.element.secret == "2:2"));
-
-            Assert.IsTrue(c.Any(n => n.offsetX == -1));
-            Assert.IsTrue(c.Any(n => n.offsetX == 1));
-
-            Assert.IsTrue(c.All(v => v.original == n[2,2]));
-
+            Assert.IsTrue(gridN.GetNeighbours(2, 2,Neighbours.DIAGONALS).Any(n => gridN[n].secret == "1:1"));
+            Assert.IsTrue(gridN.GetNeighbours(2, 2, Neighbours.DIAGONALS).Any(n => gridN[n].secret == "3:3"));
+            Assert.IsFalse(gridN.GetNeighbours(2, 2, Neighbours.CROSS).Any(n => gridN[n].secret == "3:3"));
+            Assert.IsTrue(gridN.GetNeighbours(2, 2, Neighbours.CROSS).Any(n => gridN[n].secret == "2:1"));
+            Assert.IsTrue(gridN.GetNeighbours(2, 2, Neighbours.HORIZONTAL).Any(n => gridN[n].secret == "1:2"));
+            Assert.IsTrue(gridN.GetNeighbours(2, 2, Neighbours.HORIZONTAL).Any(n => gridN[n].secret == "3:2"));
+            Assert.IsTrue(gridN.GetNeighbours(2, 2, Neighbours.VERTICAL).Any(n => gridN[n].secret == "2:3"));
         }
-
+        
         [TestMethod()]
         public void LoopTest()
         {
@@ -211,15 +217,15 @@ namespace Tests
         [TestMethod()]
         public void GetSectionTest()
         {
-            n[2, 2].test = true;
-            var l = n.GetSection(2, 2, 2, 2);
+            gridN[2, 2].test = true;
+            var l = gridN.GetSection(2, 2, 2, 2);
             Assert.IsTrue(l[0, 0].test);
             Assert.AreEqual(l.width, 2);
-            Assert.AreEqual(l[0, 0].secret, n[2, 2].secret);
+            Assert.AreEqual(l[0, 0].secret, gridN[2, 2].secret);
 
             try
             {
-                var t = n.GetSection(3, 0, 5, 1);
+                var t = gridN.GetSection(3, 0, 5, 1);
                 Assert.Fail();
             }
             catch (System.Exception e)

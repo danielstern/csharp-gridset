@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections;
-
 using System.Linq;
+
+
 namespace GridSet
 {
 
@@ -14,13 +15,11 @@ namespace GridSet
         public int length { get { return width * height; } }
         public delegate void GridDelegateFn(T element, int x, int y);
 
-        //public static bool Tru = new RecursionValidityDelegate(_Tru);
-
         public static bool _Tru(int x, int y)
         {
             return true;
         }
-
+        /*
         public class GridElementRelationship
         {
             public T element;
@@ -30,46 +29,42 @@ namespace GridSet
             public int elementX;
             public int elementY;
         }
+        */
 
-        
 
         public delegate T TAccessorFunction(int x, int y);
-
         
-
-        public GridSet(int x, int y, TAccessorFunction a) : this(x, y, default(T)) {
-            Fill(a);
-        }
-
         public override string ToString()
         {
-            return "Grid ["+width+"x"+height+"]";
+            return "Grid [" + width + "x" + height + "]";
         }
 
         //public static void Tilehop
 
-        public GridSet(int x, int y) : this(x,y,default(T))  { }
-        public GridSet(int x, int y, T def)
-        {
-            this.width = x;
-            this.height = y;
-            grid = new T[x, y];
-            this.Fill(def);
-        }
+        //public GridSet(int x, int y) : this(x,y,default(T))  { }
 
-        public GridCoordRef[] GetNeighboursCoord(GridCoordRef coord, bool diagonals = true)
+
+        public GridCoordRef[] GetNeighbours(int x, int y, Neighbours diagonals = Neighbours.CROSS, int range = 1)
+        {
+            return GetNeighbours(new GridCoordRef(x, y), diagonals, range);
+        }
+        public GridCoordRef[] GetNeighbours(GridCoordRef coord, Neighbours diagonals = Neighbours.CROSS, int range = 1)
         {
             var coords = new List<GridCoordRef>();
-            for (var i = -1; i <= 1; i++)
+            for (var i = -range; i <= range; i++)
             {
-                for (var j = -1; j <= 1; j++)
+                for (var j = -range; j <= range; j++)
                 {
                     if (WithinBounds(coord.x + i, coord.y + j))
                     {
-                        if (!(j == 0 && i == 0))
+                        // if diagonals has the vert bit and y is 0
+                        // or diagonals has the horizontal bit and x is 0
+                        // or diagonals has the diagonal bit and neither x nor y is 0
+                        if (((diagonals & Neighbours.HORIZONTAL) != 0 && j == 0) ||
+                            ((diagonals & Neighbours.VERTICAL) != 0 && i == 0) ||
+                            ((diagonals & Neighbours.DIAGONALS) != 0 && i != 0 && j != 0))
                         {
-                            //Console.Write(diagonals);
-                            if (diagonals || (i == 0 || j == 0))
+                            if (!(i == 0 && j == 0))
                             {
                                 coords.Add(new GridCoordRef(coord.x + i, coord.y + j));
                             }
@@ -80,45 +75,41 @@ namespace GridSet
             }
             return coords.ToArray();
         }
+         
 
-        public GridElementRelationship[] GetNeighbours(GridCoordRef coord, bool diagonals = true)
-        {
-            return GetNeighbours(coord.x, coord.y, diagonals);
-        }
 
-        public GridElementRelationship[] GetNeighbours(int x, int y, bool diagonals = true)
+
+
+
+        public GridSet(int x, int y, TAccessorFunction def = null)
         {
-            var rels = new System.Collections.Generic.List<GridElementRelationship>();
-            for (var i = -1; i <= 1; i++)
+            this.width = x;
+            this.height = y;
+            grid = new T[x, y];
+            if (def != null)
             {
-                for (var j = -1; j <= 1; j++)
-                {
-                    if (WithinBounds(x + i, y + j))
-                    {
-                        if (!(j == 0 && i == 0))
-                        {
-                            //Console.Write(diagonals);
-                            if (diagonals || (i == 0 || j == 0))
-                            {
-                                GridElementRelationship g = new GridElementRelationship();
-                                g.original = grid[x, y];
-                                g.element = grid[x + i, y + j];
-                                g.offsetX = i;
-                                g.offsetY = j;
-                                g.elementX = x;
-                                g.elementY = y;
-
-                                rels.Add(g);
-                            }
-                            
-                        }                        
-                    }
-                }
+                Fill(def); 
             }
-            return rels.ToArray();
         }
 
-        public IEnumerable<GridCoordRef[]> NeighbourRecurse(GridCoordRef startCoord, bool useDiagonals, RecursionValidityDelegate ShouldRecurse, int maxSteps = 1000)
+        public GridCoordRef[] ToArea(GridCoordRef r, int range)
+        {
+            //HashSet<GridCoordRef> refs = new HashSet<GridCoordRef>();
+            GridCoordRef[] refs = GetNeighbours(r, Neighbours.ALL, range);
+            return refs.ToArray();
+        } 
+
+        public void Fill(TAccessorFunction accessor)
+        {
+            Loop((T t, int x, int y) =>
+            {
+                grid[x, y] = accessor(x, y);
+            });
+        }
+
+
+
+        public IEnumerable<GridCoordRef[]> NeighbourRecurse(GridCoordRef startCoord, Neighbours neighbours, RecursionValidityDelegate ShouldRecurse, int maxSteps = 1000)
         {
             int count = 0;
             bool allHaveBeenFilled = false;
@@ -137,7 +128,7 @@ namespace GridSet
                 GridCoordRef current = stack.First();
                 stack.RemoveFirst();
 
-                GridCoordRef[] newRels = GetNeighboursCoord(current, useDiagonals)
+                GridCoordRef[] newRels = GetNeighbours(current, neighbours)
                     .Where((GridCoordRef g) => { return ShouldRecurse(g); })
                     .ToArray();
 
@@ -154,13 +145,13 @@ namespace GridSet
                 {
                     allHaveBeenFilled = true;
                     Console.Write("All are filled");
-                    
+
                 }
                 //throw new NotImplementedException();
-                    
 
 
-               // TileCoordRef[] neighbours = GetNeighbours(startCoord.x, startCoord.y, useDiagonals);
+
+                // TileCoordRef[] neighbours = GetNeighbours(startCoord.x, startCoord.y, useDiagonals);
             }
             //return recursedTiles.ToArray();
             yield return recursedTiles.ToArray();
@@ -172,14 +163,8 @@ namespace GridSet
                 y >= 0 && y < height);
         }
 
-        public void Fill(TAccessorFunction accessor)
-        {
-            Loop((T t, int x, int y) =>
-            {
-                grid[x, y] = accessor(x,y);
-            });
-        }
 
+        /*
         public void Fill(T defaultValue)
         {
             Loop((T t, int x, int y) =>
@@ -187,7 +172,7 @@ namespace GridSet
                 grid[x, y] = defaultValue;
             });
         }
-
+        */
         public GridSet<T> GetSection(int bottom, int top)
         {
             return GetSection(0, bottom, width, top - bottom);
